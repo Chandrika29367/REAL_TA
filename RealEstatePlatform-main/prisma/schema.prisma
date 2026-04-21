@@ -1,0 +1,92 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int              @id @default(autoincrement())
+  name            String
+  email           String           @unique
+  password        String
+  role            String           @default("buyer")  // buyer, agent, admin
+  phone           String?
+  agentName       String?
+  agentBio        String?
+  agentPhoto      String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  inquiries       Inquiry[]
+  userReviews     Review[]         @relation("UserReviews")
+  agentReviews    Review[]         @relation("AgentReviews")
+  savedProperties SavedProperty[]
+  listings        Property[]       @relation("AgentListings")
+}
+
+model Property {
+  id              Int              @id @default(autoincrement())
+  title           String
+  city            String
+  location        String
+  latitude        Float?
+  longitude       Float?
+  price           Float
+  type            String           // Residential, Commercial, Office, Apartment
+  listing         String           @default("Buy")  // Buy, Rent
+  beds            Int              @default(0)
+  baths           Int              @default(0)
+  area            Float
+  status          String           @default("available")  // available, sold, rented
+  imageUrl        String?
+  images          String[]         @default([])  // Array of image URLs
+  amenities       String[]         @default([])  // Parking, Gym, Pool, etc
+  description     String?
+  featured        Boolean          @default(false)
+  agentId         Int?
+  agent           User?            @relation("AgentListings", fields: [agentId], references: [id], onDelete: SetNull)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  inquiries       Inquiry[]
+  reviews         Review[]
+  savedBy         SavedProperty[]
+}
+
+model Inquiry {
+  id              Int              @id @default(autoincrement())
+  message         String
+  propertyId      Int
+  userId          Int
+  property        Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status          String           @default("pending")  // pending, contacted, resolved
+  createdAt       DateTime         @default(now())
+  @@index([propertyId, userId])
+}
+
+model Review {
+  id              Int              @id @default(autoincrement())
+  rating          Int              // 1-5
+  comment         String
+  propertyId      Int?
+  property        Property?        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  agentId         Int?
+  agent           User?            @relation("AgentReviews", fields: [agentId], references: [id], onDelete: Cascade)
+  userId          Int
+  user            User             @relation("UserReviews", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime         @default(now())
+  @@unique([userId, propertyId, agentId])
+}
+
+model SavedProperty {
+  id              Int              @id @default(autoincrement())
+  userId          Int
+  propertyId      Int
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property        Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt       DateTime         @default(now())
+  @@unique([userId, propertyId])
+}
