@@ -356,7 +356,7 @@ This will:
 npm run dev
 ```
 
-Visit http://localhost:3000
+Visit https://real-estate-platform-six-iota.vercel.app/
 
 ---
 
